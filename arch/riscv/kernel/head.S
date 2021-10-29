@@ -39,6 +39,8 @@ _start:
     # ------------------
     # - your code here -
     # ------------------
+    call mm_init
+    call task_init
     call start_kernel
     .section .bss.stack
     .globl boot_stack
