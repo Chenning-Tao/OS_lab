@@ -3,6 +3,9 @@
     .global _traps
     .global __dummy
 __dummy:
+    la t0, dummy
+    csrw sepc, t0
+    sret
 _traps:
 # save register
 save_register:
