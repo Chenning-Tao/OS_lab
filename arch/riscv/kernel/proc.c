@@ -9,6 +9,21 @@ struct task_struct* idle;           // idle process
 struct task_struct* current;        // 指向当前运行线程的 `task_struct`
 struct task_struct* task[NR_TASKS]; // 线程数组，所有的线程都保存在此
 
+// arch/riscv/kernel/proc.c
+
+void dummy() {
+    uint64 MOD = 1000000007;
+    uint64 auto_inc_local_var = 0;
+    int last_counter = -1;
+    while(1) {
+        if (last_counter == -1 || current->counter != last_counter) {
+            last_counter = current->counter;
+            auto_inc_local_var = (auto_inc_local_var + 1) % MOD;
+            printk("[PID = %d] is running. auto_inc_local_var = %d\n", current->pid, auto_inc_local_var);
+        }
+    }
+}
+
 void task_init() {
     // 1. 调用 kalloc() 为 idle 分配一个物理页
     idle = (struct task_struct*) kalloc();
@@ -38,7 +53,8 @@ void task_init() {
         task[i]->counter = 0;
         task[i]->priority = rand();
         task[i]->pid = i;
-        // task[i]->thread.ra = (void *)__dummy;
+        task[i]->thread.ra = (void *)__dummy;
+        printk("%x\n", task[i]->thread.ra);
         task[i]->thread.sp = (uint64)task[i] + PGSIZE;
     }
 

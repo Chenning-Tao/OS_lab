@@ -1,6 +1,8 @@
     .section .text.entry
     .align 2
-    .globl _traps
+    .global _traps
+    .global __dummy
+__dummy:
 _traps:
 # save register
 save_register:
