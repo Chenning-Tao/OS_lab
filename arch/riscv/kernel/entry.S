@@ -1,7 +1,41 @@
+.extern dummy
     .section .text.entry
     .align 2
     .global _traps
     .global __dummy
+    .global __switch_to
+__switch_to:
+    # save state to prev process
+    sd sp, 0x30(a0)
+    sd ra, 0x28(a0)
+    sd s0, 0x38(a0)
+    sd s1, 0x40(a0)
+    sd s2, 0x48(a0)
+    sd s3, 0x50(a0)
+    sd s4, 0x58(a0)
+    sd s5, 0x60(a0)
+    sd s6, 0x68(a0)
+    sd s7, 0x70(a0)
+    sd s8, 0x78(a0)
+    sd s9, 0x80(a0)
+    sd s10, 0x88(a0)
+    sd s11, 0x90(a0)
+    # restore state from next process
+    ld sp, 0x30(a1)
+    ld ra, 0x28(a1)
+    ld s0, 0x38(a1)
+    ld s1, 0x40(a1)
+    ld s2, 0x48(a1)
+    ld s3, 0x50(a1)
+    ld s4, 0x58(a1)
+    ld s5, 0x60(a1)
+    ld s6, 0x68(a1)
+    ld s7, 0x70(a1)
+    ld s8, 0x78(a1)
+    ld s9, 0x80(a1)
+    ld s10, 0x88(a1)
+    ld s11, 0x90(a1)
+    ret
 __dummy:
     la t0, dummy
     csrw sepc, t0

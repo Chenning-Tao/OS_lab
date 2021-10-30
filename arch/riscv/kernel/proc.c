@@ -4,6 +4,7 @@
 #include "defs.h"
 
 extern void __dummy();
+extern void __switch_to(struct task_struct* prev, struct task_struct* next);
 
 struct task_struct* idle;           // idle process
 struct task_struct* current;        // 指向当前运行线程的 `task_struct`
@@ -54,6 +55,14 @@ void task_init() {
         task[i]->thread.ra = (void *)__dummy;
         task[i]->thread.sp = (uint64)task[i] + PGSIZE;
     }
-
     printk("...proc_init done!\n");
+}
+
+void switch_to(struct task_struct* next) {
+    /* YOUR CODE HERE */
+    if(next != current) __switch_to(current, next);
+}
+
+void do_timer(void) {
+
 }
