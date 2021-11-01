@@ -21,6 +21,7 @@ __switch_to:
     sd s10, 0x88(a0)
     sd s11, 0x90(a0)
     # restore state from next process
+    ld t0, 32(a1)
     ld sp, 0x30(a1)
     ld ra, 0x28(a1)
     ld s0, 0x38(a1)
@@ -36,10 +37,6 @@ __switch_to:
     ld s10, 0x88(a1)
     ld s11, 0x90(a1)
     ret
-__dummy:
-    la t0, dummy
-    csrw sepc, t0
-    sret
 _traps:
 # save register
 save_register:
@@ -117,4 +114,9 @@ load_register:
     csrw sepc, t0
     addi sp, sp, 256
     
+    sret
+
+__dummy:
+    la t0, dummy
+    csrw sepc, t0
     sret

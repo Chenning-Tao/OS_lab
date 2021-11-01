@@ -60,9 +60,89 @@ void task_init() {
 
 void switch_to(struct task_struct* next) {
     /* YOUR CODE HERE */
-    if(next != current) __switch_to(current, next);
+    struct task_struct* temp = current;
+    if(next != current) {
+        current = next;
+        __switch_to(temp, next);
+    }
 }
 
 void do_timer(void) {
-
+    /* 1. 如果当前线程是 idle 线程 直接返回 */
+    /* 2. 如果当前线程不是 idle 对当前线程的运行剩余时间减 1 
+          若剩余时间任然大于0 则直接返回 否则进行调度 */
+    if(current == idle) schedule();
+    else if(current != idle){
+        current->counter--;
+        if(current->counter == 0) schedule();
+    }
+    else printk("idle process is running!\n");
 }
+
+#ifdef SJF
+void schedule(void) {
+    int min_value = 999999;
+    int min = -1;
+    // 判断是否全部为0
+    int reset = 1;
+    for (int i = 1; i <= NR_TASKS - 1; ++i){
+        if(task[i]->counter != 0) {
+            reset = 0;
+            break;
+        }
+    }
+    // 如果全部为0 reset
+    if (reset){
+        for (int i = 1; i <= NR_TASKS - 1; ++i){
+            task[i]->counter = rand();
+        }
+    }
+    for(int i = 1; i <= NR_TASKS - 1; ++i){
+        if(task[i]->counter == 0) continue;
+        if(task[i]->counter < min_value) {
+            min = i;
+            min_value = task[i]->counter;
+        }
+        else if(task[i]->counter == min_value) {
+            if(task[i]->counter > task[min]->counter) {
+                min = i;
+                min_value = task[i]->counter;
+            }
+        }
+    }
+    switch_to(task[min]);
+}
+#endif
+
+#ifdef PRIORITY
+void schedule(void) {
+    // 判断是否全部为0
+    int reset = 1;
+    for (int i = 1; i <= NR_TASKS - 1; ++i){
+        if(task[i]->counter != 0) {
+            reset = 0;
+            break;
+        }
+    }
+    // 如果全部为0 reset
+    if (reset){
+        for (int i = 1; i <= NR_TASKS - 1; ++i){
+            task[i]->counter = rand();
+            printk("SET [PID = %d PRIORITY = %d COUNTER = %d]\n", task[i]->pid, task[i]->priority, task[i]->counter);
+        }
+    }
+    printk("\n");
+
+    int c = -1;
+    int next = 0;
+    for(int i = NR_TASKS-1; i > 0; --i){
+        if (task[i]->counter == 0) continue;
+        if (task[i]->priority > task[next]->priority)
+            next = i;
+        if (task[i]->priority == task[next]->priority)
+            if(task[i]->counter < task[next]->counter)
+                next = i;
+    }
+    switch_to(task[next]);
+}
+#endif
