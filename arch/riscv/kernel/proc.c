@@ -95,6 +95,7 @@ void schedule(void) {
     if (reset){
         for (int i = 1; i <= NR_TASKS - 1; ++i){
             task[i]->counter = rand();
+            printk("SET [PID = %d COUNTER = %d]\n", task[i]->pid, task[i]->counter);
         }
     }
     for(int i = 1; i <= NR_TASKS - 1; ++i){
@@ -110,6 +111,7 @@ void schedule(void) {
             }
         }
     }
+    printk("switch to [PID = %d COUNTER = %d]\n", task[next]->pid, task[next]->counter);
     switch_to(task[min]);
 }
 #endif
@@ -143,6 +145,7 @@ void schedule(void) {
             if(task[i]->counter < task[next]->counter)
                 next = i;
     }
+    printk("switch to [PID = %d PRIORITY = %d COUNTER = %d]\n", task[next]->pid, task[next]->priority, task[next]->counter);
     switch_to(task[next]);
 }
 #endif
