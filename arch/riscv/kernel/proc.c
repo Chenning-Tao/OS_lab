@@ -111,7 +111,7 @@ void schedule(void) {
             }
         }
     }
-    printk("switch to [PID = %d COUNTER = %d]\n", task[next]->pid, task[next]->counter);
+    printk("switch to [PID = %d COUNTER = %d]\n", task[min]->pid, task[min]->counter);
     switch_to(task[min]);
 }
 #endif

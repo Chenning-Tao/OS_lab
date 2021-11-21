@@ -1,4 +1,4 @@
 #include "types.h"
 
-#define SEED 13
+#define SEED 1
 uint64 rand();
