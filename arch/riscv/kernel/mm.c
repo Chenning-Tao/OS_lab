@@ -37,12 +37,12 @@ void kfree(uint64 addr) {
 
 void kfreerange(char *start, char *end) {
     char *addr = (char *)PGROUNDUP((uint64)start);
-    for (; (uint64)(addr) + PGSIZE <= PHY_END; addr += PGSIZE) {
+    for (; (uint64)(addr) + PGSIZE <= VM_START + PHY_SIZE; addr += PGSIZE) {
         kfree((uint64)addr);
     }
 }
 
 void mm_init(void) {
-    kfreerange(_ekernel, (char *)PHY_END);
+    kfreerange(_ekernel, (char *)(VM_START + PHY_SIZE));
     printk("...mm_init done!\n");
 }

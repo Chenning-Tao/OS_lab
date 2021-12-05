@@ -40,6 +40,7 @@ _start:
     lw t0, 0(sp)
     addi sp, sp, 8
     call mm_init
+    call setup_vm_final
     call task_init
     call start_kernel
 
@@ -54,8 +55,6 @@ relocate:
     # set satp with early_pgtbl
     
     la t0, early_pgtbl
-    # li t1, VM_START
-    # sub t0, t0, t1
     srli t0, t0, 12
     li t1, (8 << 60)
     or t0, t0, t1
@@ -63,7 +62,6 @@ relocate:
     
     # flush tlb
     sfence.vma zero, zero
-
     ret
 
     .section .bss.stack
