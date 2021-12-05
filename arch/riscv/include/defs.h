@@ -15,6 +15,9 @@
 #define VM_END   (0xffffffff00000000)
 #define VM_SIZE  (VM_END - VM_START)
 
+#define USER_START (0x0000000000000000) // user space start virtual address
+#define USER_END   (0x0000004000000000) // user space end virtual address
+
 #define PA2VA_OFFSET (VM_START - PHY_START)
 
 #define csr_read(csr)                       \
