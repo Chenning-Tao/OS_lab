@@ -2,9 +2,12 @@
 
 #include "proc.h"
 #include "defs.h"
+#include "vm.h"
 
 extern void __dummy();
 extern void __switch_to(struct task_struct* prev, struct task_struct* next);
+extern unsigned long swapper_pg_dir[512];
+extern unsigned long long uapp_start;
 
 struct task_struct* idle;           // idle process
 struct task_struct* current;        // 指向当前运行线程的 `task_struct`
@@ -54,7 +57,48 @@ void task_init() {
         task[i]->pid = i;
         task[i]->thread.ra = (void *)__dummy;
         task[i]->thread.sp = (uint64)task[i] + PGSIZE;
+        // U-Mode Stack
+        uint64 U_stack = kalloc();
+        // 获取一页作为用户页表
+        unsigned long *pgtbl = kalloc();
+        // 将系统页表放入用户页表中
+        for(int i = 0; i < 512; ++i){
+            pgtbl[i] = swapper_pg_dir[i];
+        }
+        // 将用户程序放入用户页表中
+        // -|U|X|W|R|V
+        create_mapping(pgtbl, USER_START, (uint64)&uapp_start - PA2VA_OFFSET, PGSIZE, 31);
+        // U-Mode Stack放入用户页表中
+        // -|U|X|W|R|V
+        create_mapping(pgtbl, USER_END - PGSIZE, U_stack - PA2VA_OFFSET, PGSIZE, 31);
+        // 修改sepc
+        task[i]->thread.sepc = USER_START;
+        // 修改sstatus
+        __asm__ volatile (
+            "csrr t0, sstatus\n"
+            "li t1, 0x00040120\n"
+            "or t0, t0, t1\n"
+            "mv %[sstatus], t0\n"
+            : [sstatus] "=r" (task[i]->thread.sstatus)
+            : 
+            : "memory"
+        );
+        // 修改sscratch
+        task[i]->thread.sscratch = USER_END;
+
     }
+    __asm__ volatile (
+        "mv t0, %[addr]\n"
+        "srli t0, t0, 12\n"
+        "li t1, (8 << 60)\n"
+        "or t0, t0, t1\n"
+        "csrw satp, t0\n"
+        :
+        : [addr] "r" ((uint64)&swapper_pg_dir - PA2VA_OFFSET)
+        : "memory"
+    );
+    // flush TLB
+    asm volatile("sfence.vma zero, zero");
     printk("...proc_init done!\n");
 }
 

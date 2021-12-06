@@ -1,6 +1,7 @@
 #include "defs.h"
 #include "types.h"
 #include "printk.h"
+#include "vm.h"
 /* early_pgtbl: 用于 setup_vm 进行 1GB 的 映射。 */
 unsigned long early_pgtbl[512] __attribute__((__aligned__(0x1000)));
 /* swapper_pg_dir: kernel pagetable 根目录， 在 setup_vm_final 进行映射。 */
@@ -28,34 +29,17 @@ void setup_vm(void) {
 
 void setup_vm_final(void) {
     memset(swapper_pg_dir, 0x0, PGSIZE);
-    // // No OpenSBI mapping required
+    // No OpenSBI mapping required
 
-    // // mapping kernel text X|-|R|V
+    // mapping kernel text X|-|R|V
     create_mapping(swapper_pg_dir, (uint64)&_stext, (uint64)&_stext - PA2VA_OFFSET, (uint64)&_srodata - (uint64)&_stext, 11);
        
-    // // mapping kernel rodata -|-|R|V
+    // mapping kernel rodata -|-|R|V
     create_mapping(swapper_pg_dir, (uint64)&_srodata, (uint64)&_srodata - PA2VA_OFFSET, (uint64)&_sdata - (uint64)&_srodata, 3);
     
-    // // mapping other memory -|W|R|V
+    // mapping other memory -|W|R|V
     create_mapping(swapper_pg_dir, (uint64)&_sdata, (uint64)&_sdata - PA2VA_OFFSET, PHY_END - ((uint64)&_sdata - PA2VA_OFFSET), 7);
 
-    // create_mapping(swapper_pg_dir, VM_START, PHY_START, PHY_SIZE, 15);
-    // set satp with swapper_pg_dir
-
-    // // YOUR CODE HERE
-    __asm__ volatile (
-        "mv t0, %[addr]\n"
-        "srli t0, t0, 12\n"
-        "li t1, (8 << 60)\n"
-        "or t0, t0, t1\n"
-        "csrw satp, t0\n"
-        :
-        : [addr] "r" ((uint64)&swapper_pg_dir - PA2VA_OFFSET)
-        : "memory"
-    );
-
-    // flush TLB
-    asm volatile("sfence.vma zero, zero");
     return;
 }
 
@@ -102,18 +86,5 @@ create_mapping(uint64 *pgtbl, uint64 va, uint64 pa, uint64 sz, int perm) {
         // 第0级
         cur_pgtbl[vn0] = (uint64)((pa_current >> 12) << 10) + perm;
     }
-    /*your code*/
-	/* 38 30 29 21 20 12 */
-	// for(uint64 i=0;i<sz;i+=0x1000){//map 4K every time
-	// 	uint64 L2 = (va>>30 & 0x1ff); //first page
-	// 	uint64 L1 = (va>>21 & 0x1ff); 
-	// 	uint64 L0 = (va>>12 & 0x1ff);
-	// 	uint64 offset = va & 0xfff;
-	// 	uint64* addr1 = kalloc(); 
-	// 	pgtbl[L2] = ((uint64)addr1<<10) | 1; 
-	// 	uint64* addr0 = kalloc(); //third page base
-	// 	addr1[L1] = ((uint64)addr0<<10) | 1; 
-	// 	addr0[L0] = ((pa >> 12) << 10) | 1 | (perm >> 1);
 
-	// }
 }

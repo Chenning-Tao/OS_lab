@@ -13,10 +13,10 @@ CFLAG = ${CF} ${INCLUDE} -D SJF
 
 .PHONY:all run debug clean
 all:
+	${MAKE} -C user all
 	${MAKE} -C lib all
 	${MAKE} -C init all
 	${MAKE} -C arch/riscv all
-	${MAKE} -C user all
 	@echo -e '\n'Build Finished OK
 
 run: all
@@ -24,14 +24,14 @@ run: all
 	@qemu-system-riscv64 -nographic -machine virt -kernel vmlinux -bios default 
 
 debug: all
-	@echo Launch the qemu for debug ......
+	@echo Launch the qemu for debug ...... 
 	@qemu-system-riscv64 -nographic -machine virt -kernel vmlinux -bios default -S -s
 
 clean:
+	${MAKE} -C user all
 	${MAKE} -C lib clean
 	${MAKE} -C init clean
 	${MAKE} -C arch/riscv clean
-	${MAKE} -C user all
 	$(shell test -f vmlinux && rm vmlinux)
 	$(shell test -f System.map && rm System.map)
 	@echo -e '\n'Clean Finished
