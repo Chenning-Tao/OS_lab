@@ -60,7 +60,8 @@ void task_init() {
         // U-Mode Stack
         uint64 U_stack = kalloc();
         // 获取一页作为用户页表
-        unsigned long *pgtbl = kalloc();
+        uint64 pgb_addr = kalloc();
+        unsigned long *pgtbl = (unsigned long *)pgb_addr;
         // 将系统页表放入用户页表中
         for(int i = 0; i < 512; ++i){
             pgtbl[i] = swapper_pg_dir[i];
@@ -71,6 +72,8 @@ void task_init() {
         // U-Mode Stack放入用户页表中
         // -|U|X|W|R|V
         create_mapping(pgtbl, USER_END - PGSIZE, U_stack - PA2VA_OFFSET, PGSIZE, 31);
+        // 保存page table地址
+        task[i]->pgd = pgb_addr - PA2VA_OFFSET;
         // 修改sepc
         task[i]->thread.sepc = USER_START;
         // 修改sstatus
@@ -85,7 +88,6 @@ void task_init() {
         );
         // 修改sscratch
         task[i]->thread.sscratch = USER_END;
-
     }
     __asm__ volatile (
         "mv t0, %[addr]\n"

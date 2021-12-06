@@ -20,6 +20,12 @@ __switch_to:
     sd s9, 0x80(a0)
     sd s10, 0x88(a0)
     sd s11, 0x90(a0)
+    csrr t0, sepc
+    sd t0, 0x98(a0)
+    csrr t0, sstatus
+    sd t0, 0xa0(a0)
+    csrr t0, sscratch
+    sd t0, 0xa8(a0)
     # restore state from next process
     ld t0, 32(a1)
     ld sp, 0x30(a1)
@@ -36,6 +42,19 @@ __switch_to:
     ld s9, 0x80(a1)
     ld s10, 0x88(a1)
     ld s11, 0x90(a1)
+    ld t0, 0x98(a1)
+    csrw sepc, t0
+    ld t0, 0xa0(a1)
+    csrw sstatus, t0
+    ld t0, 0xa8(a1)
+    csrw sscratch, t0
+    # 切换页表
+    ld t0, 0xb0(a1)
+    srli t0, t0, 12
+    li t1, (8 << 60)
+    or t0, t0, t1
+    csrw satp, t0
+    sfence.vma zero, zero
     ret
 _traps:
 # save register
