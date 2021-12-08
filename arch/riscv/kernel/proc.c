@@ -79,7 +79,7 @@ void task_init() {
         // 修改sstatus
         __asm__ volatile (
             "csrr t0, sstatus\n"
-            "li t1, 0x00040120\n"
+            "li t1, 0x00040020\n"
             "or t0, t0, t1\n"
             "mv %[sstatus], t0\n"
             : [sstatus] "=r" (task[i]->thread.sstatus)
@@ -89,18 +89,7 @@ void task_init() {
         // 修改sscratch
         task[i]->thread.sscratch = USER_END;
     }
-    __asm__ volatile (
-        "mv t0, %[addr]\n"
-        "srli t0, t0, 12\n"
-        "li t1, (8 << 60)\n"
-        "or t0, t0, t1\n"
-        "csrw satp, t0\n"
-        :
-        : [addr] "r" ((uint64)&swapper_pg_dir - PA2VA_OFFSET)
-        : "memory"
-    );
-    // flush TLB
-    asm volatile("sfence.vma zero, zero");
+    
     printk("...proc_init done!\n");
 }
 
@@ -117,13 +106,23 @@ void do_timer(void) {
     /* 1. 如果当前线程是 idle 线程 直接返回 */
     /* 2. 如果当前线程不是 idle 对当前线程的运行剩余时间减 1 
           若剩余时间任然大于0 则直接返回 否则进行调度 */
-    if(current == idle) schedule();
-    else if(current != idle){
-        current->counter--;
-        if(current->counter == 0) schedule();
-    }
-    else printk("idle process is running!\n");
+    // if(current == idle) schedule();
+    // else if(current != idle){
+    //     current->counter--;
+    //     if(current->counter == 0) schedule();
+    // }
+    // else printk("idle process is running!\n");
+    schedule();
 }
+
+#ifdef NONE
+int cur = 0;
+void schedule(void) {
+    if (cur == NR_TASKS-1) cur = 1;
+    else cur = (cur + 1) % NR_TASKS;
+    switch_to(task[cur]);
+}
+#endif
 
 #ifdef SJF
 void schedule(void) {

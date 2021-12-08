@@ -33,9 +33,9 @@ _start:
     ecall
 
 # set sstatus[SIE] = 1
-    csrr t0, sstatus
-    ori t0, t0, 0x00000002
-    csrw sstatus, t0
+    # csrr t0, sstatus
+    # ori t0, t0, 0x00000002
+    # csrw sstatus, t0
 # restore
     lw t0, 0(sp)
     addi sp, sp, 8

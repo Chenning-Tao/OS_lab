@@ -1,4 +1,5 @@
 .extern dummy
+.extern struct task_struct* current
     .section .text.entry
     .align 2
     .global _traps
@@ -57,8 +58,22 @@ __switch_to:
     sfence.vma zero, zero
     ret
 _traps:
-# save register
 save_register:
+# # 保存会用到的寄存器的值
+#     addi sp, sp, -24
+#     sd t0, 0(sp)
+#     sd t1, 8(sp)
+#     sd t2, 16(sp)
+# 获取目前线程的地址
+    la t0, current
+    ld t1, 0(t0)
+# 切换Mode, t2为sscratch
+    ld t2, 0xa8(t1)
+    beq t2, x0, no_switch1
+    sd t2, 0x30(t1)
+    sd sp, 0xa8(t1)
+    mv sp, t2
+no_switch1:
     addi sp, sp, -256
     sd x1, 0(sp)
     sd x3, 8(sp)
@@ -93,11 +108,11 @@ save_register:
     csrr t0, sepc
     sd t0, 240(sp)
     sd sp, 248(sp)
-# call interrupt
+call_interrupt:
     csrr a0, scause
     mv a1, t0
+    mv a2, sp
     call trap_handler
-# load register
 load_register:
     ld x1, 0(sp)
     ld x3, 8(sp)
@@ -130,12 +145,36 @@ load_register:
     ld x30, 224(sp)
     ld x31, 232(sp)
     ld t0, 240(sp)
+    addi t0, t0, 4
     csrw sepc, t0
     addi sp, sp, 256
-    
+# 获取目前线程的地址
+    la t0, current
+    ld t1, 0(t0)
+# 切换Mode, t2为sscratch
+    ld t2, 0xa8(t1)
+    beq t2, x0, no_switch2
+    sd t2, 0x30(t1)
+    sd sp, 0xa8(t1)
+    mv sp, t2
+no_switch2:
+    # ld t0, 0(sp)
+    # ld t1, 8(sp)
+    # ld t2, 16(sp)
+    # addi sp, sp, 24
     sret
 
 __dummy:
+# 获取目前线程的地址
+    la t0, current
+    ld t1, 0(t0)
+# 切换Mode, t2为sscratch
+    ld t2, 0xa8(t1)
+    beq t2, x0, no_switch2
+    sd t2, 0x30(t1)
+    sd sp, 0xa8(t1)
+    mv sp, t2
+
     la t0, dummy
-    csrw sepc, t0
+    csrw sepc, x0
     sret

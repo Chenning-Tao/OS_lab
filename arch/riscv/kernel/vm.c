@@ -9,6 +9,7 @@ unsigned long swapper_pg_dir[512] __attribute__((__aligned__(0x1000)));
 extern unsigned long long _stext;
 extern unsigned long long _srodata;
 extern unsigned long long _sdata;
+extern unsigned long long _sbss;
 extern unsigned long long _ekernel;
 
 void setup_vm(void) {
@@ -38,8 +39,21 @@ void setup_vm_final(void) {
     create_mapping(swapper_pg_dir, (uint64)&_srodata, (uint64)&_srodata - PA2VA_OFFSET, (uint64)&_sdata - (uint64)&_srodata, 3);
     
     // mapping other memory -|W|R|V
-    create_mapping(swapper_pg_dir, (uint64)&_sdata, (uint64)&_sdata - PA2VA_OFFSET, PHY_END - ((uint64)&_sdata - PA2VA_OFFSET), 7);
+    create_mapping(swapper_pg_dir, (uint64)&_sdata, (uint64)&_sdata - PA2VA_OFFSET, PGSIZE, 7);
+    create_mapping(swapper_pg_dir, (uint64)&_sbss, (uint64)&_sbss - PA2VA_OFFSET, PHY_END - ((uint64)&_sbss - PA2VA_OFFSET), 7);
 
+    __asm__ volatile (
+        "mv t0, %[addr]\n"
+        "srli t0, t0, 12\n"
+        "li t1, (8 << 60)\n"
+        "or t0, t0, t1\n"
+        "csrw satp, t0\n"
+        :
+        : [addr] "r" ((uint64)&swapper_pg_dir - PA2VA_OFFSET)
+        : "memory"
+    );
+    // flush TLB
+    asm volatile("sfence.vma zero, zero");
     return;
 }
 
