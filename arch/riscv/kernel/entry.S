@@ -25,8 +25,8 @@ __switch_to:
     sd t0, 0x98(a0)
     csrr t0, sstatus
     sd t0, 0xa0(a0)
-    csrr t0, sscratch
-    sd t0, 0xa8(a0)
+    # csrr t0, sscratch
+    # sd t0, 0xa8(a0)
     # restore state from next process
     ld t0, 32(a1)
     ld sp, 0x30(a1)
@@ -47,8 +47,8 @@ __switch_to:
     csrw sepc, t0
     ld t0, 0xa0(a1)
     csrw sstatus, t0
-    ld t0, 0xa8(a1)
-    csrw sscratch, t0
+    # ld t0, 0xa8(a1)
+    # csrw sscratch, t0
     # 切换页表
     ld t0, 0xb0(a1)
     srli t0, t0, 12
@@ -59,11 +59,6 @@ __switch_to:
     ret
 _traps:
 save_register:
-# # 保存会用到的寄存器的值
-#     addi sp, sp, -24
-#     sd t0, 0(sp)
-#     sd t1, 8(sp)
-#     sd t2, 16(sp)
 # 获取目前线程的地址
     la t0, current
     ld t1, 0(t0)
@@ -74,7 +69,8 @@ save_register:
     sd sp, 0xa8(t1)
     mv sp, t2
 no_switch1:
-    addi sp, sp, -256
+    addi sp, sp, -248
+    sd sp, 0x30(t1)
     sd x1, 0(sp)
     sd x3, 8(sp)
     sd x4, 16(sp)
@@ -107,13 +103,19 @@ no_switch1:
     sd x31, 232(sp)
     csrr t0, sepc
     sd t0, 240(sp)
-    sd sp, 248(sp)
 call_interrupt:
     csrr a0, scause
     mv a1, t0
     mv a2, sp
     call trap_handler
 load_register:
+    # load sp
+    la t0, current
+    ld t1, 0(t0)
+    ld sp, 0x30(t1)
+    ld t0, 240(sp)
+    addi t0, t0, 4
+    csrw sepc, t0
     ld x1, 0(sp)
     ld x3, 8(sp)
     ld x4, 16(sp)
@@ -144,10 +146,7 @@ load_register:
     ld x29, 216(sp)
     ld x30, 224(sp)
     ld x31, 232(sp)
-    ld t0, 240(sp)
-    addi t0, t0, 4
-    csrw sepc, t0
-    addi sp, sp, 256
+    addi sp, sp, 248
 # 获取目前线程的地址
     la t0, current
     ld t1, 0(t0)
@@ -158,10 +157,6 @@ load_register:
     sd sp, 0xa8(t1)
     mv sp, t2
 no_switch2:
-    # ld t0, 0(sp)
-    # ld t1, 8(sp)
-    # ld t2, 16(sp)
-    # addi sp, sp, 24
     sret
 
 __dummy:
@@ -174,7 +169,5 @@ __dummy:
     sd t2, 0x30(t1)
     sd sp, 0xa8(t1)
     mv sp, t2
-
-    la t0, dummy
     csrw sepc, x0
     sret
